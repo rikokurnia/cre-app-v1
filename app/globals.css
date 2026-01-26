@@ -1,26 +1,83 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Palette from PRD */
+  --color-primary: #3674B5;
+  --color-secondary: #578FCA;
+  --color-accent: #A1E3F9;
+  --color-neutral: #D1F8EF;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-accent); /* #A1E3F9 - Strict Requirement */
+  font-family: var(--font-body);
+  color: var(--color-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  text-transform: uppercase; /* Mondwest looks better uppercase usually */
+}
+
+/* Specific Utilities if Tailwind doesn't auto-pick up theme variables in v4 beta sometimes */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* 3D Grid Animation */
+@keyframes grid-move {
+  0% {
+    transform: perspective(600px) rotateX(60deg) translateY(0);
+  }
+  100% {
+    transform: perspective(600px) rotateX(60deg) translateY(40px);
+  }
+}
+
+.grid-floor {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  left: -50%;
+  top: 50%; /* Start floor lower */
+
+  /* Grid lines using Primary Blue with transparency */
+  background-image:
+    linear-gradient(to right, rgba(54, 116, 181, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(54, 116, 181, 0.4) 1px, transparent 1px);
+
+  background-size: 40px 40px;
+  transform-origin: 50% 0;
+  animation: grid-move 2s linear infinite;
+  z-index: -1;
+  pointer-events: none;
+
+  /* Mask to fade out into the distance */
+  mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 100%);
+}
+
+/* Scroll Section Utilities */
+.section-min-h {
+  min-height: 80vh;
+}
+
+.pattern-grid {
+  background-image: radial-gradient(#3674B5 1px, transparent 1px);
+  background-size: 20px 20px;
 }

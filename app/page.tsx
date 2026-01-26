@@ -1,65 +1,215 @@
+"use client";
+
+import { useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowRight, Trophy, Zap, Shield, Users } from "lucide-react";
+
+import HeroGrid from "./components/landing/HeroGrid";
+import StatsMarquee from "./components/landing/StatsMarquee";
+import RealTimeClock from "./components/landing/RealTimeClock";
+import HowItWorks from "./components/landing/HowItWorks";
 
 export default function Home() {
+  
+  // Auto-redirect Logic (Commented out for now until Onboarding page exists to avoid 404 loops during review)
+  /*
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // window.location.href = "/onboarding"; 
+      console.log("Redirect triggered (Mock)");
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+  */
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen bg-[#A1E3F9] text-[#3674B5] overflow-hidden selection:bg-[#3674B5] selection:text-[#A1E3F9]">
+      
+      {/* SECTION 1: HERO */}
+      <section className="relative h-screen flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+        <HeroGrid /> {/* 3D Floor Background */}
+        
+        <div className="z-10 flex flex-col items-center gap-6 max-w-4xl">
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <RealTimeClock />
+          </motion.div>
+
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-6xl md:text-8xl font-heading leading-[0.85] uppercase tracking-tighter"
           >
-            Documentation
-          </a>
+            Predict Creators on <span className="text-white drop-shadow-[0_4px_0_rgba(54,116,181,1)]">Farcaster</span>
+          </motion.h1>
+
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-xl md:text-2xl font-body max-w-2xl text-[#3674B5]/80"
+          >
+            The first prediction market powered by <span className="font-bold">Thetanuts</span> & <span className="font-bold">Base</span>. Build your deck, trade options, and win rewards.
+          </motion.p>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="flex gap-4 mt-8"
+          >
+            <button className="px-8 py-4 bg-[#3674B5] text-[#D1F8EF] font-heading text-2xl uppercase border-b-4 border-[#2A598A] hover:translate-y-[2px] hover:border-b-2 active:border-b-0 active:translate-y-[4px] transition-all shadow-lg rounded-lg">
+              Launch App
+            </button>
+            <button className="px-8 py-4 bg-[#D1F8EF] text-[#3674B5] font-heading text-2xl uppercase border-b-4 border-[#3674B5]/30 hover:bg-white transition-all shadow-lg rounded-lg">
+              Read Docs
+            </button>
+          </motion.div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* SECTION 2: STATS TICKER */}
+      <StatsMarquee />
+
+      {/* SECTION 3: CONCEPT (FLY WHEEL) */}
+      <section className="py-24 px-6 md:px-12 bg-[#578FCA] text-[#D1F8EF] pattern-grid">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1 space-y-6">
+            <h2 className="text-5xl md:text-6xl font-heading uppercase leading-none">
+              Fantasy Cards <br/>
+              <span className="text-[#A1E3F9]">Meets</span> <br/>
+              Options Trading
+            </h2>
+            <p className="text-xl font-body opacity-90 leading-relaxed">
+              We merged the addictiveness of card collecting with the depth of financial derivatives. 
+              Buy NFT cards of your favorite creators on Base, then use Thetanuts RFQ options to bet on their engagement metrics.
+            </p>
+            <div className="flex gap-4 pt-4">
+              <div className="bg-[#3674B5]/50 p-4 rounded-lg flex items-center gap-3">
+                <Trophy size={32} />
+                <div>
+                  <div className="font-heading text-xl">Fantasy</div>
+                  <div className="text-sm">Collect & Compete</div>
+                </div>
+              </div>
+              <div className="bg-[#3674B5]/50 p-4 rounded-lg flex items-center gap-3">
+                <Zap size={32} />
+                <div>
+                  <div className="font-heading text-xl">Options</div>
+                  <div className="text-sm">Bet & Hedge</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 relative h-[500px] w-full flex items-center justify-center">
+             {/* Abstract Graphic: Card floating over a graph */}
+             <div className="w-64 h-96 bg-[#D1F8EF] rounded-xl border-4 border-[#3674B5] shadow-[20px_20px_0px_0px_#3674B5] relative z-10 rotate-[-6deg] flex flex-col items-center justify-center">
+                <div className="w-20 h-20 bg-[#578FCA] rounded-full mb-4 animate-pulse"></div>
+                <div className="font-heading text-3xl text-[#3674B5]">@dwr</div>
+                <div className="font-body text-[#3674B5]">Rare Card</div>
+             </div>
+             <div className="w-64 h-96 bg-[#3674B5] rounded-xl border-4 border-[#D1F8EF] shadow-xl absolute z-0 rotate-[6deg] opacity-80 flex flex-col items-center justify-center text-[#D1F8EF]">
+                 <div className="font-heading text-2xl">CALL OPTION</div>
+                 <div className="text-4xl mt-2">+420%</div>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: HOW IT WORKS */}
+      <section className="py-32 bg-[#A1E3F9] relative overflow-hidden">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-heading text-[#3674B5] mb-4">How To Play</h2>
+          <p className="font-body text-[#3674B5]/70 text-lg">Three simple steps to mastery.</p>
+        </div>
+        <HowItWorks />
+      </section>
+
+      {/* SECTION 5: FEATURES DEEP DIVE */}
+      <section className="py-24 bg-[#D1F8EF] border-y border-[#3674B5]">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+             <div className="space-y-12">
+                <div className="group">
+                  <h3 className="text-3xl font-heading text-[#3674B5] mb-2 group-hover:translate-x-2 transition-transform cursor-default">
+                    On-Chain Settlement
+                  </h3>
+                  <p className="text-[#3674B5]/70 leading-relaxed border-l-4 border-[#578FCA] pl-4">
+                    All specific trades and payouts are settled on Base L2. Transparent, immutable, and gas-efficient.
+                  </p>
+                </div>
+                <div className="group">
+                  <h3 className="text-3xl font-heading text-[#3674B5] mb-2 group-hover:translate-x-2 transition-transform cursor-default">
+                    Real-Time Neynar Data
+                  </h3>
+                  <p className="text-[#3674B5]/70 leading-relaxed border-l-4 border-[#578FCA] pl-4">
+                    We fetch engagement metrics directly from the Farcaster protocol via Neynar, ensuring your predictions are based on live truth.
+                  </p>
+                </div>
+                <div className="group">
+                  <h3 className="text-3xl font-heading text-[#3674B5] mb-2 group-hover:translate-x-2 transition-transform cursor-default">
+                    Liquid Options via Thetanuts
+                  </h3>
+                  <p className="text-[#3674B5]/70 leading-relaxed border-l-4 border-[#578FCA] pl-4">
+                    Leverage RFQ-powered liquidity for instant execution on your calls and puts. No more waiting for a counterparty.
+                  </p>
+                </div>
+             </div>
+             <div className="bg-[#3674B5] p-8 rounded-2xl rotate-2 hover:rotate-0 transition-all duration-500 shadow-2xl">
+                <div className="border-2 border-dashed border-[#A1E3F9] p-8 rounded-xl h-full flex flex-col justify-center items-center text-[#D1F8EF] text-center">
+                   <Shield size={64} className="mb-6 opacity-80" />
+                   <h4 className="font-heading text-3xl mb-4">Secure & Audited</h4>
+                   <p className="font-body text-sm opacity-70">
+                     Smart contracts audited and secured by the best in DeFi. Your funds are safe on Base.
+                   </p>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6: ECOSYSTEM (TRUST) */}
+      <section className="py-24 bg-[#A1E3F9] text-center">
+        <h2 className="text-2xl font-body font-bold text-[#3674B5]/50 uppercase tracking-widest mb-12">Powered By</h2>
+        <div className="flex flex-wrap justify-center items-center gap-16 px-6 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+           {/* Placeholders for partner logos - using Text for now */}
+           <div className="text-4xl font-heading text-[#3674B5]">BASE</div>
+           <div className="text-4xl font-heading text-[#3674B5]">THETANUTS</div>
+           <div className="text-4xl font-heading text-[#3674B5]">NEYNAR</div>
+           <div className="text-4xl font-heading text-[#3674B5]">FARCASTER</div>
+        </div>
+      </section>
+
+      {/* SECTION 7: FOOTER */}
+      <footer className="bg-[#3674B5] text-[#D1F8EF] py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center space-y-8">
+           <h2 className="text-6xl font-heading uppercase">Ready to enter the Arena?</h2>
+           <p className="font-body text-xl max-w-xl mx-auto opacity-80">
+             Join thousands of predictors and creators building the future of SocialFi on Base.
+           </p>
+           <button className="px-12 py-5 bg-[#A1E3F9] text-[#3674B5] font-heading text-2xl uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(161,227,249,0.5)] rounded-lg">
+             Launch App
+           </button>
+           <div className="pt-20 flex justify-between items-end border-t border-[#D1F8EF]/20 mt-20">
+              <div className="text-left">
+                <div className="font-heading text-2xl mb-2">Creator Predict</div>
+                <div className="text-sm opacity-60">© 2024 All Rights Reserved.</div>
+              </div>
+              <div className="flex gap-6">
+                 <Link href="#" className="hover:text-white transition-colors">Twitter</Link>
+                 <Link href="#" className="hover:text-white transition-colors">Discord</Link>
+                 <Link href="#" className="hover:text-white transition-colors">Docs</Link>
+              </div>
+           </div>
+        </div>
+      </footer>
+
+    </main>
   );
 }
