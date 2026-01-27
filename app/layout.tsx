@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { VT323, Inter, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 
-const headingFont = localFont({
-  src: "../public/fonts/mondwest.woff2",
+const headingFont = VT323({
+  weight: "400",
+  subsets: ["latin"],
   variable: "--font-heading",
-  weight: "100 900",
 });
 
-const bodyFont = localFont({
-  src: "../public/fonts/alliance.woff2",
+const bodyFont = Inter({
+  subsets: ["latin"],
   variable: "--font-body",
+});
+
+const pixelFont = Press_Start_2P({
   weight: "400",
+  subsets: ["latin"],
+  variable: "--font-pixel",
 });
 
 export const metadata: Metadata = {
@@ -27,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${headingFont.variable} ${bodyFont.variable} antialiased`}
+        className={`${headingFont.variable} ${bodyFont.variable} ${pixelFont.variable} antialiased`}
       >
         {children}
       </body>

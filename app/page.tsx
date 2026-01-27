@@ -13,16 +13,7 @@ import HowItWorks from "./components/landing/HowItWorks";
 
 export default function Home() {
   
-  // Auto-redirect Logic (Commented out for now until Onboarding page exists to avoid 404 loops during review)
-  /*
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // window.location.href = "/onboarding"; 
-      console.log("Redirect triggered (Mock)");
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-  */
+  // Auto-redirect Removed per user request
 
   return (
     <main className="min-h-screen bg-[#A1E3F9] text-[#3674B5] overflow-hidden selection:bg-[#3674B5] selection:text-[#A1E3F9]">
@@ -64,9 +55,9 @@ export default function Home() {
             transition={{ delay: 0.6 }}
             className="flex gap-4 mt-8"
           >
-            <button className="px-8 py-4 bg-[#3674B5] text-[#D1F8EF] font-heading text-2xl uppercase border-b-4 border-[#2A598A] hover:translate-y-[2px] hover:border-b-2 active:border-b-0 active:translate-y-[4px] transition-all shadow-lg rounded-lg">
+            <Link href="/story" className="px-8 py-4 bg-[#3674B5] text-[#D1F8EF] font-heading text-2xl uppercase border-b-4 border-[#2A598A] hover:translate-y-[2px] hover:border-b-2 active:border-b-0 active:translate-y-[4px] transition-all shadow-lg rounded-lg inline-block">
               Launch App
-            </button>
+            </Link>
             <button className="px-8 py-4 bg-[#D1F8EF] text-[#3674B5] font-heading text-2xl uppercase border-b-4 border-[#3674B5]/30 hover:bg-white transition-all shadow-lg rounded-lg">
               Read Docs
             </button>
@@ -193,9 +184,9 @@ export default function Home() {
            <p className="font-body text-xl max-w-xl mx-auto opacity-80">
              Join thousands of predictors and creators building the future of SocialFi on Base.
            </p>
-           <button className="px-12 py-5 bg-[#A1E3F9] text-[#3674B5] font-heading text-2xl uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(161,227,249,0.5)] rounded-lg">
+           <Link href="/story" className="px-12 py-5 bg-[#A1E3F9] text-[#3674B5] font-heading text-2xl uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(161,227,249,0.5)] rounded-lg inline-block">
              Launch App
-           </button>
+           </Link>
            <div className="pt-20 flex justify-between items-end border-t border-[#D1F8EF]/20 mt-20">
               <div className="text-left">
                 <div className="font-heading text-2xl mb-2">Creator Predict</div>

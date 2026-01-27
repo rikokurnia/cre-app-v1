@@ -11,6 +11,11 @@
 @theme {
   --font-heading: var(--font-heading);
   --font-body: var(--font-body);
+  --font-pixel: var(--font-pixel);
+}
+
+.font-pixel {
+  font-family: var(--font-pixel);
 }
 
 body {
