@@ -18,7 +18,7 @@ export const useStoryStore = create<StoryState>((set) => ({
   skipAll: () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('hasSeenStory', 'true');
-      window.location.href = '/dashboard'; // Placeholder for now
+      window.location.href = '/login'; 
     }
   },
 }));

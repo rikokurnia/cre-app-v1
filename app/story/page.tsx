@@ -71,7 +71,7 @@ export default function StoryPage() {
       nextPage();
     } else {
       skipAll(); // Finish
-      // router.push("/dashboard"); // Redirect handled by skipAll logic or here
+      router.push("/login"); // Go to Login first
     }
   };
 

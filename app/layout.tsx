@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { VT323, Inter, Press_Start_2P } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const headingFont = VT323({
   weight: "400",
@@ -34,7 +35,9 @@ export default function RootLayout({
       <body
         className={`${headingFont.variable} ${bodyFont.variable} ${pixelFont.variable} antialiased`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

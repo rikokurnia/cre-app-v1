@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@coinbase/onchainkit": "^1.0.0",
+    "@neynar/nodejs-sdk": "^2.7.1",
+    "@tanstack/react-query": "^5.64.2",
     "framer-motion": "^12.29.2",
     "lucide-react": "^0.563.0",
     "next": "16.1.4",
@@ -16,6 +19,8 @@
     "react-dom": "19.2.3",
     "react-fast-marquee": "^1.6.5",
     "react-type-animation": "^3.2.0",
+    "viem": "^2.23.2",
+    "wagmi": "^2.14.11",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
