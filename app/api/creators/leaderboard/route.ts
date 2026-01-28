@@ -16,6 +16,12 @@ interface LeaderboardEntry {
   change_24h: number; // Positive = up, Negative = down
 }
 
+// Generate a consistent "24h change" based on FID (same value for same creator)
+function generateConsistentChange(fid: number): number {
+  const seed = fid * 997 % 200;
+  return seed - 100;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -66,7 +72,7 @@ export async function GET(request: Request) {
         score: Math.min(Math.round(data.totalScore / data.castCount * 5), 1000),
         follower_count: data.user.follower_count || 0,
         power_badge: data.user.power_badge || false,
-        change_24h: Math.floor(Math.random() * 200) - 100, // Mock 24h change for now
+        change_24h: generateConsistentChange(fid),
       }))
       .sort((a, b) => b.score - a.score)
       .map((entry, index) => ({ ...entry, rank: index + 1 }));
@@ -102,7 +108,7 @@ export async function GET(request: Request) {
               score: 999 - (index * 20) + Math.floor(Math.random() * 50),
               follower_count: user.follower_count,
               power_badge: user.power_badge,
-              change_24h: Math.floor(Math.random() * 200) - 100
+              change_24h: generateConsistentChange(user.fid)
            }))
            .sort((a, b) => b.score - a.score)
            .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
@@ -121,8 +127,8 @@ export async function GET(request: Request) {
 
     // 2. Final Static Fallback
     const mockLeaderboard: LeaderboardEntry[] = [
-      { rank: 1, fid: 5650, username: 'vitalik.eth', display_name: 'Vitalik Buterin', pfp_url: 'https://i.imgur.com/3pX1G9m.jpg', score: 999, follower_count: 500000, power_badge: true, change_24h: 45 },
-      { rank: 2, fid: 3, username: 'dwr.eth', display_name: 'Dan Romero', pfp_url: 'https://github.com/dwr.png', score: 980, follower_count: 150000, power_badge: true, change_24h: 12 },
+      { rank: 1, fid: 5650, username: 'vitalik.eth', display_name: 'Vitalik Buterin', pfp_url: 'https://i.imgur.com/3pX1G9m.jpg', score: 999, follower_count: 500000, power_badge: true, change_24h: generateConsistentChange(5650) },
+      { rank: 2, fid: 3, username: 'dwr.eth', display_name: 'Dan Romero', pfp_url: 'https://github.com/dwr.png', score: 980, follower_count: 150000, power_badge: true, change_24h: generateConsistentChange(3) },
     ];
 
     return NextResponse.json({

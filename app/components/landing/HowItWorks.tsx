@@ -5,21 +5,21 @@ import { motion } from "framer-motion";
 const steps = [
   {
     id: 1,
-    title: "Scout Creators",
-    desc: "Analyze real-time Farcaster engagement data (Casts, Likes, Replies).",
+    title: "Consult the Grimoire",
+    desc: "Read the celestial signals (Casts, Likes, Replies) to find rising stars.",
     icon: "🔍"
   },
   {
     id: 2,
-    title: "Build Your Deck",
-    desc: "Collect NFT Cards of your favorite creators on Base.",
+    title: "Gather Your Heroes",
+    desc: "Summon Hero Cards of your favorite creators on Base to build your team.",
     icon: "🃏"
   },
   {
     id: 3,
-    title: "Predict & Earn",
-    desc: "Trade options via Thetanuts based on performance predictions.",
-    icon: "📈"
+    title: "Cast Your Fate",
+    desc: "Use Ignite (Up) or Eclipse (Down) spells to predict their path and earn rewards.",
+    icon: "✨"
   }
 ];
 

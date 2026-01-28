@@ -105,13 +105,13 @@ export default function CreatorCard({ creator, onTrade, rank }: CreatorCardProps
             onClick={() => onTrade(creator, 'CALL')}
             className="flex items-center justify-center gap-1.5 py-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 font-bold text-sm border border-emerald-100 transition-colors group-hover:scale-[1.02]"
           >
-            <ArrowUpRight size={16} /> CALL
+            <ArrowUpRight size={16} /> IGNITE
           </button>
           <button 
             onClick={() => onTrade(creator, 'PUT')}
             className="flex items-center justify-center gap-1.5 py-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-bold text-sm border border-rose-100 transition-colors group-hover:scale-[1.02]"
           >
-            <ArrowDownRight size={16} /> PUT
+            <ArrowDownRight size={16} /> ECLIPSE
           </button>
         </div>
       </div>

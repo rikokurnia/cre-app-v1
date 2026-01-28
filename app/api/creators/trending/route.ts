@@ -14,6 +14,7 @@ interface Creator {
   follower_count: number;
   power_badge: boolean;
   trending_rank: number;
+  change_24h: number;
 }
 
 // Calculate engagement score from cast data
@@ -29,6 +30,13 @@ function calculateScore(cast: any): number {
   // Weighted engagement score (normalized to 0-1000 range)
   const rawScore = (likes * likesWeight) + (recasts * recastsWeight) + (replies * repliesWeight);
   return Math.min(Math.round(rawScore), 1000);
+}
+
+// Generate a consistent "24h change" based on FID (same value for same creator)
+function generateConsistentChange(fid: number): number {
+  // Use FID as seed for pseudo-random but deterministic change
+  const seed = fid * 997 % 200; // Prime multiplication for better distribution
+  return seed - 100; // Range: -100 to +99
 }
 
 export async function GET() {
@@ -54,6 +62,7 @@ export async function GET() {
           follower_count: author.follower_count || 0,
           power_badge: author.power_badge || false,
           trending_rank: index + 1,
+          change_24h: generateConsistentChange(author.fid),
         });
       } else {
         // Update score if this cast has higher engagement
@@ -93,7 +102,8 @@ export async function GET() {
             score: 950 - (index * 20) + Math.floor(Math.random() * 50), // Mock score
             follower_count: user.follower_count,
             power_badge: user.power_badge,
-            trending_rank: index + 1
+            trending_rank: index + 1,
+            change_24h: generateConsistentChange(user.fid),
          }));
          
          return NextResponse.json({ 
@@ -107,8 +117,8 @@ export async function GET() {
 
     // 2. Final Static Fallback (if both API calls fail)
     const STATIC_CREATORS = [
-      { fid: 5650, username: 'vitalik.eth', display_name: 'Vitalik Buterin', pfp_url: 'https://i.imgur.com/3pX1G9m.jpg', score: 999, follower_count: 500000, power_badge: true, trending_rank: 1 },
-      { fid: 3, username: 'dwr.eth', display_name: 'Dan Romero', pfp_url: 'https://github.com/dwr.png', score: 980, follower_count: 150000, power_badge: true, trending_rank: 2 },
+      { fid: 5650, username: 'vitalik.eth', display_name: 'Vitalik Buterin', pfp_url: 'https://i.imgur.com/3pX1G9m.jpg', score: 999, follower_count: 500000, power_badge: true, trending_rank: 1, change_24h: generateConsistentChange(5650) },
+      { fid: 3, username: 'dwr.eth', display_name: 'Dan Romero', pfp_url: 'https://github.com/dwr.png', score: 980, follower_count: 150000, power_badge: true, trending_rank: 2, change_24h: generateConsistentChange(3) },
     ];
     
     return NextResponse.json({ 

@@ -199,13 +199,13 @@ export default function CreatorDetailPage({ params }: { params: Promise<{ fid: s
               onClick={() => handleTrade('CALL')}
               className="flex items-center justify-center gap-2 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 font-heading text-xl transition-colors shadow-md"
             >
-              <ArrowUpRight size={24} /> CALL
+              <ArrowUpRight size={24} /> IGNITE
             </button>
             <button 
               onClick={() => handleTrade('PUT')}
               className="flex items-center justify-center gap-2 py-4 bg-rose-500 text-white rounded-xl hover:bg-rose-600 font-heading text-xl transition-colors shadow-md"
             >
-              <ArrowDownRight size={24} /> PUT
+              <ArrowDownRight size={24} /> ECLIPSE
             </button>
           </div>
         </div>

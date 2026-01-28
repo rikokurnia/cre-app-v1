@@ -63,22 +63,30 @@ export default function LeaderboardPage() {
         <button 
           onClick={fetchLeaderboard}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-[#A1E3F9] rounded-full hover:bg-[#D1F8EF] transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#A1E3F9] rounded-full hover:bg-[#D1F8EF] transition-colors"
         >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          <span className="text-sm font-medium text-[#3674B5]">Refresh</span>
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <span className="text-xs font-medium text-[#3674B5] hidden sm:inline">Refresh</span>
         </button>
       </header>
 
       {/* Leaderboard Table */}
       <div className="bg-white rounded-2xl border border-[#A1E3F9] shadow-sm overflow-hidden">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gradient-to-r from-[#3674B5] to-[#578FCA] text-white text-sm font-medium uppercase tracking-wider">
+        {/* Table Header - Hidden on mobile */}
+        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-gradient-to-r from-[#3674B5] to-[#578FCA] text-white text-sm font-medium uppercase tracking-wider">
           <div className="col-span-1">Rank</div>
           <div className="col-span-5">Creator</div>
           <div className="col-span-2 text-center">Score</div>
           <div className="col-span-2 text-center">24h Change</div>
           <div className="col-span-2 text-center">Followers</div>
+        </div>
+        
+        {/* Mobile Header */}
+        <div className="md:hidden grid grid-cols-12 gap-2 px-4 py-3 bg-gradient-to-r from-[#3674B5] to-[#578FCA] text-white text-xs font-medium uppercase">
+          <div className="col-span-2">Rank</div>
+          <div className="col-span-5">Creator</div>
+          <div className="col-span-3 text-right">Score</div>
+          <div className="col-span-2 text-right">24h</div>
         </div>
 
         {/* Table Body */}
@@ -103,59 +111,105 @@ export default function LeaderboardPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-[#D1F8EF]/30 transition-colors cursor-pointer group"
+              className="border-b border-gray-100 hover:bg-[#D1F8EF]/30 transition-colors cursor-pointer group"
             >
-              {/* Rank */}
-              <div className="col-span-1 flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${getRankStyle(entry.rank)}`}>
-                  {entry.rank}
+              {/* Desktop Row */}
+              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4">
+                {/* Rank */}
+                <div className="col-span-1 flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${getRankStyle(entry.rank)}`}>
+                    {entry.rank}
+                  </div>
+                </div>
+
+                {/* Creator */}
+                <div className="col-span-5 flex items-center gap-3">
+                  <Link href={`/dashboard/creator/${entry.fid}`} className="flex items-center gap-3 group-hover:translate-x-1 transition-transform">
+                    <img 
+                      src={entry.pfp_url} 
+                      alt={entry.username}
+                      className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://avatar.vercel.sh/${entry.username}`;
+                      }}
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-heading text-lg text-[#3674B5]">{entry.display_name}</span>
+                        {entry.power_badge && (
+                          <Zap size={14} className="text-amber-500" />
+                        )}
+                      </div>
+                      <span className="text-sm text-gray-400">@{entry.username}</span>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Score */}
+                <div className="col-span-2 flex items-center justify-center">
+                  <span className="font-pixel text-xl text-[#3674B5]">{entry.score}</span>
+                </div>
+
+                {/* 24h Change */}
+                <div className="col-span-2 flex items-center justify-center">
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
+                    entry.change_24h >= 0 
+                      ? 'bg-emerald-50 text-emerald-600' 
+                      : 'bg-rose-50 text-rose-600'
+                  }`}>
+                    {entry.change_24h >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {entry.change_24h >= 0 ? '+' : ''}{entry.change_24h}
+                  </div>
+                </div>
+
+                {/* Followers */}
+                <div className="col-span-2 flex items-center justify-center text-gray-500">
+                  {(entry.follower_count / 1000).toFixed(1)}K
                 </div>
               </div>
-
-              {/* Creator */}
-              <div className="col-span-5 flex items-center gap-3">
-                <Link href={`/dashboard/creator/${entry.fid}`} className="flex items-center gap-3 group-hover:translate-x-1 transition-transform">
+              
+              {/* Mobile Row */}
+              <Link href={`/dashboard/creator/${entry.fid}`} className="md:hidden grid grid-cols-12 gap-2 px-4 py-3 items-center">
+                {/* Rank */}
+                <div className="col-span-2 flex items-center">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${getRankStyle(entry.rank)}`}>
+                    {entry.rank}
+                  </div>
+                </div>
+                
+                {/* Creator */}
+                <div className="col-span-5 flex items-center gap-2 min-w-0">
                   <img 
                     src={entry.pfp_url} 
                     alt={entry.username}
-                    className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+                    className="w-8 h-8 rounded-full border border-white shadow-sm flex-shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = `https://avatar.vercel.sh/${entry.username}`;
                     }}
                   />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-heading text-lg text-[#3674B5]">{entry.display_name}</span>
-                      {entry.power_badge && (
-                        <Zap size={14} className="text-amber-500" />
-                      )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-heading text-sm text-[#3674B5] truncate">{entry.display_name.split(' ')[0]}</span>
+                      {entry.power_badge && <Zap size={10} className="text-amber-500 flex-shrink-0" />}
                     </div>
-                    <span className="text-sm text-gray-400">@{entry.username}</span>
+                    <span className="text-xs text-gray-400">@{entry.username}</span>
                   </div>
-                </Link>
-              </div>
-
-              {/* Score */}
-              <div className="col-span-2 flex items-center justify-center">
-                <span className="font-pixel text-xl text-[#3674B5]">{entry.score}</span>
-              </div>
-
-              {/* 24h Change */}
-              <div className="col-span-2 flex items-center justify-center">
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
-                  entry.change_24h >= 0 
-                    ? 'bg-emerald-50 text-emerald-600' 
-                    : 'bg-rose-50 text-rose-600'
-                }`}>
-                  {entry.change_24h >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {entry.change_24h >= 0 ? '+' : ''}{entry.change_24h}
                 </div>
-              </div>
-
-              {/* Followers */}
-              <div className="col-span-2 flex items-center justify-center text-gray-500">
-                {(entry.follower_count / 1000).toFixed(1)}K
-              </div>
+                
+                {/* Score */}
+                <div className="col-span-3 text-right">
+                  <span className="font-pixel text-sm text-[#3674B5]">{entry.score}</span>
+                </div>
+                
+                {/* 24h Change */}
+                <div className="col-span-2 flex justify-end">
+                  <span className={`text-xs font-medium ${
+                    entry.change_24h >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                  }`}>
+                    {entry.change_24h >= 0 ? '+' : ''}{entry.change_24h}
+                  </span>
+                </div>
+              </Link>
             </motion.div>
           ))
         )}

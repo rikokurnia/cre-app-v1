@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Layers, ArrowUpRight, ArrowDownRight, Star, TrendingUp, TrendingDown } from "lucide-react";
 import { useUserStore } from "@/app/store/useUserStore";
 import Link from "next/link";
+import { calculateRarity, RARITY_STYLES } from "@/utils/game/rarity";
 
 // VIP Avatars Map (Ensures consistency with API fallback)
 const VIP_AVATARS: Record<string, string> = {
@@ -55,7 +56,15 @@ export default function DeckPage() {
     }
   });
 
-  const cards = Array.from(creatorCards.values());
+  const cards = Array.from(creatorCards.values()).map(card => {
+    // Calculate Rarity (based on hypothetical entry price vs current price logic, 
+    // or just PnL percentage for Deck view since we aggregate positions)
+    const invested = card.totalInvested;
+    const current = invested + card.totalPnL;
+    const rarity = calculateRarity(invested, current, 'CALL'); // Treat as generic ROI
+    
+    return { ...card, rarity, style: RARITY_STYLES[rarity] };
+  });
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -109,9 +118,17 @@ export default function DeckPage() {
               whileHover={{ y: -8, rotateY: 5, transition: { duration: 0.3 } }}
               className="relative group perspective-1000"
             >
-              {/* Card */}
-              <div className="bg-gradient-to-br from-[#3674B5] via-[#578FCA] to-[#A1E3F9] p-1 rounded-2xl shadow-xl">
-                <div className="bg-white rounded-xl overflow-hidden">
+              {/* Rarity Glow */}
+              <div className={`absolute inset-0 rounded-2xl opacity-50 blur-xl transition-all duration-500 group-hover:opacity-80 -z-10 ${card.style.bgGradient}`} />
+
+              {/* Card Container */}
+              <div className={`p-1 rounded-2xl shadow-xl transition-all duration-300 border-2 ${card.style.borderColor} ${card.style.bgGradient}`}>
+                <div className="bg-white rounded-xl overflow-hidden h-full relative">
+                  
+                  {/* Rarity Badge */}
+                  <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-full text-[10px] font-bold text-white uppercase border border-white/20">
+                     {card.style.icon} {card.rarity}
+                  </div>
                   {/* Card Header */}
                   <div className="h-24 bg-gradient-to-r from-[#D1F8EF] to-[#A1E3F9] relative">
                     {/* Decorative Stars */}
@@ -138,7 +155,7 @@ export default function DeckPage() {
 
                   {/* Card Content */}
                   <div className="pt-12 px-5 pb-5 text-center">
-                    <h3 className="font-heading text-xl text-[#3674B5]">{card.name}</h3>
+                    <h3 className={`font-heading text-xl ${card.style.color}`}>{card.name}</h3>
                     <p className="text-sm text-gray-400 mb-4">@{card.username}</p>
 
                     {/* Stats */}
@@ -175,8 +192,8 @@ export default function DeckPage() {
                 </div>
               </div>
 
-              {/* Glowing Effect on Hover */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#3674B5] to-[#A1E3F9] opacity-0 group-hover:opacity-20 blur-xl transition-opacity -z-10" />
+              {/* Glowing Effect on Hover (Custom per rarity) */}
+              <div className={`absolute inset-0 rounded-2xl ${card.style.bgGradient} opacity-0 group-hover:opacity-20 blur-xl transition-opacity -z-20`} />
             </motion.div>
           ))}
         </div>
