@@ -21,7 +21,7 @@ const pixelFont = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "Creator Predict Base",
+  title: "NovaCreator",
   description: "Predict Farcaster Creators. Build Your Deck. Win Rewards.",
 };
 
