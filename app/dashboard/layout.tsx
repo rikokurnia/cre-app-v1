@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useAccount } from "wagmi";
+import { LogOut } from "lucide-react"; 
+import { useAccount, useDisconnect } from "wagmi";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import NovaSidebar from "../components/dashboard/NovaSidebar";
@@ -10,6 +10,7 @@ import FutureNavbar from "../components/navigation/FutureNavbar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const router = useRouter();
 
   // Protect Route
@@ -22,6 +23,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-[#F0F9FF] to-[#D1F8EF] selection:bg-[#3674B5] selection:text-white">
       
+      {/* Logout Button (Fixed Top Right) */}
+      <button 
+        onClick={() => disconnect()}
+        className="fixed top-4 right-4 z-50 p-2.5 bg-white/80 backdrop-blur-md rounded-full text-[#3674B5] hover:bg-red-50 hover:text-red-500 shadow-lg border border-[#A1E3F9] transition-all group"
+        title="Log Out"
+      >
+        <LogOut size={20} className="group-hover:scale-110 transition-transform" />
+      </button>
+
       {/* Top Navigation - actually Bottom now */}
       <FutureNavbar />
 
