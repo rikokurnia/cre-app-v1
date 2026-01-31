@@ -107,17 +107,17 @@ const ORDER_DATA = {
 
 async function main() {
     const CONTRACT_CANDIDATES = [
-        0n,
-        1n,
-        10n,
-        100n,
-        1000n,
-        10000n,
-        100000n,
-        1000000n,
-        10000000n,
-        100000000n,
-        1000000000n,
+        BigInt(0),
+        BigInt(1),
+        BigInt(10),
+        BigInt(100),
+        BigInt(1000),
+        BigInt(10000),
+        BigInt(100000),
+        BigInt(1000000),
+        BigInt(10000000),
+        BigInt(100000000),
+        BigInt(1000000000),
         BigInt(1e6),
         BigInt(1e18),
         BigInt("10000000000"), // matches maxCollateralUsable
@@ -145,7 +145,7 @@ async function main() {
     console.log("Checking WITHOUT numContracts first...");
     for (const name of DOMAIN_NAMES) {
         for (const ver of VERSIONS) {
-             const match = await check(o, 0n, name, ver, false);
+             const match = await check(o, BigInt(0), name, ver, false);
              if (match) {
                 console.log(`\n\n!!! MATCH FOUND (No numContracts) !!!`);
                 console.log(`Domain Name: "${name}"`);
