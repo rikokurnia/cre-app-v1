@@ -211,46 +211,7 @@ export default function CreatorDetailPage({ params }: { params: Promise<{ fid: s
         </div>
       </motion.div>
 
-      {/* Recent Casts */}
-      <div>
-        <h2 className="text-2xl font-heading text-[#3674B5] mb-4">Recent Casts</h2>
-        
-        {creator.recent_casts.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
-            <div className="text-4xl mb-3">💬</div>
-            <div className="text-gray-400">No recent casts found</div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {creator.recent_casts.map((cast, index) => (
-              <motion.div
-                key={cast.hash}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white rounded-xl border border-gray-100 p-5 hover:border-[#A1E3F9] transition-colors"
-              >
-                <p className="text-gray-700 leading-relaxed mb-3">{cast.text}</p>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-4 text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Heart size={14} /> {cast.likes}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Repeat size={14} /> {cast.recasts}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageSquare size={14} /> {cast.replies}
-                    </span>
-                  </div>
-                  <span className="text-gray-300">{formatDate(cast.timestamp)}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
+
 
       {/* Trade Modal */}
       <TradeModal

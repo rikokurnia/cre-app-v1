@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Trophy, TrendingUp, TrendingDown, Zap, RefreshCw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Trophy, TrendingUp, TrendingDown, Zap, RefreshCw, Target, Users } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { useMode } from "@/app/store/ModeContext";
+import { useSignals } from "@/utils/hooks/useSignals";
 
 interface LeaderboardEntry {
   rank: number;
@@ -17,10 +20,22 @@ interface LeaderboardEntry {
   change_24h: number;
 }
 
+interface TokenCaller {
+  fid: number;
+  username: string;
+  display_name: string;
+  pfp_url: string;
+  total_calls: number;
+  accuracy: number;
+  last_call: { asset: 'ETH' | 'BTC'; type: 'BULLISH' | 'BEARISH' };
+}
+
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  
+  const { mode } = useMode();
 
   const fetchLeaderboard = async () => {
     try {
@@ -41,9 +56,9 @@ export default function LeaderboardPage() {
   }, []);
 
   const getRankStyle = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-900';
-    if (rank === 2) return 'bg-gradient-to-r from-gray-300 to-gray-200 text-gray-700';
-    if (rank === 3) return 'bg-gradient-to-r from-orange-400 to-orange-300 text-orange-900';
+    if (rank === 1) return 'bg-linear-to-r from-amber-400 to-yellow-300 text-amber-900';
+    if (rank === 2) return 'bg-linear-to-r from-gray-300 to-gray-200 text-gray-700';
+    if (rank === 3) return 'bg-linear-to-r from-orange-400 to-orange-300 text-orange-900';
     return 'bg-gray-100 text-gray-600';
   };
 
@@ -70,28 +85,23 @@ export default function LeaderboardPage() {
         </button>
       </header>
 
-      {/* Leaderboard Table */}
-      <div className="bg-white rounded-2xl border border-[#A1E3F9] shadow-sm overflow-hidden">
-        {/* Table Header - Hidden on mobile */}
-        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-gradient-to-r from-[#3674B5] to-[#578FCA] text-white text-sm font-medium uppercase tracking-wider">
+      {/* Content: Single Ranking Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl border border-[#A1E3F9] shadow-sm overflow-hidden"
+      >
+        {/* Table Header */}
+        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-linear-to-r from-[#3674B5] to-[#578FCA] text-white text-sm font-medium uppercase tracking-wider">
           <div className="col-span-1">Rank</div>
           <div className="col-span-5">Creator</div>
           <div className="col-span-2 text-center">Score</div>
           <div className="col-span-2 text-center">24h Change</div>
           <div className="col-span-2 text-center">Followers</div>
         </div>
-        
-        {/* Mobile Header */}
-        <div className="md:hidden grid grid-cols-12 gap-2 px-4 py-3 bg-gradient-to-r from-[#3674B5] to-[#578FCA] text-white text-xs font-medium uppercase">
-          <div className="col-span-2">Rank</div>
-          <div className="col-span-5">Creator</div>
-          <div className="col-span-3 text-right">Score</div>
-          <div className="col-span-2 text-right">24h</div>
-        </div>
 
-        {/* Table Body */}
+        {/* Creators List */}
         {loading ? (
-          // Skeleton
           Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 animate-pulse">
               <div className="col-span-1"><div className="h-8 w-8 bg-gray-200 rounded-full" /></div>
@@ -111,12 +121,11 @@ export default function LeaderboardPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="border-b border-gray-100 hover:bg-[#D1F8EF]/30 transition-colors cursor-pointer group"
+              className="border-b border-gray-100 hover:bg-[#D1F8EF]/30 transition-colors"
             >
-              {/* Desktop Row */}
-              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4">
+              <Link href={`/dashboard/creator/${entry.fid}`} className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
                 {/* Rank */}
-                <div className="col-span-1 flex items-center">
+                <div className="col-span-1">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${getRankStyle(entry.rank)}`}>
                     {entry.rank}
                   </div>
@@ -124,25 +133,23 @@ export default function LeaderboardPage() {
 
                 {/* Creator */}
                 <div className="col-span-5 flex items-center gap-3">
-                  <Link href={`/dashboard/creator/${entry.fid}`} className="flex items-center gap-3 group-hover:translate-x-1 transition-transform">
-                    <img 
-                      src={entry.pfp_url} 
-                      alt={entry.username}
-                      className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://avatar.vercel.sh/${entry.username}`;
-                      }}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-heading text-lg text-[#3674B5]">{entry.display_name}</span>
-                        {entry.power_badge && (
-                          <Zap size={14} className="text-amber-500" />
-                        )}
-                      </div>
-                      <span className="text-sm text-gray-400">@{entry.username}</span>
+                  <img 
+                    src={entry.pfp_url} 
+                    alt={entry.username}
+                    className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://avatar.vercel.sh/${entry.username}`;
+                    }}
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading text-lg text-[#3674B5]">{entry.display_name}</span>
+                      {entry.power_badge && (
+                        <Zap size={14} className="text-amber-500" />
+                      )}
                     </div>
-                  </Link>
+                    <span className="text-sm text-gray-400">@{entry.username}</span>
+                  </div>
                 </div>
 
                 {/* Score */}
@@ -166,54 +173,11 @@ export default function LeaderboardPage() {
                 <div className="col-span-2 flex items-center justify-center text-gray-500">
                   {(entry.follower_count / 1000).toFixed(1)}K
                 </div>
-              </div>
-              
-              {/* Mobile Row */}
-              <Link href={`/dashboard/creator/${entry.fid}`} className="md:hidden grid grid-cols-12 gap-2 px-4 py-3 items-center">
-                {/* Rank */}
-                <div className="col-span-2 flex items-center">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${getRankStyle(entry.rank)}`}>
-                    {entry.rank}
-                  </div>
-                </div>
-                
-                {/* Creator */}
-                <div className="col-span-5 flex items-center gap-2 min-w-0">
-                  <img 
-                    src={entry.pfp_url} 
-                    alt={entry.username}
-                    className="w-8 h-8 rounded-full border border-white shadow-sm flex-shrink-0"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://avatar.vercel.sh/${entry.username}`;
-                    }}
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="font-heading text-sm text-[#3674B5] truncate">{entry.display_name.split(' ')[0]}</span>
-                      {entry.power_badge && <Zap size={10} className="text-amber-500 flex-shrink-0" />}
-                    </div>
-                    <span className="text-xs text-gray-400">@{entry.username}</span>
-                  </div>
-                </div>
-                
-                {/* Score */}
-                <div className="col-span-3 text-right">
-                  <span className="font-pixel text-sm text-[#3674B5]">{entry.score}</span>
-                </div>
-                
-                {/* 24h Change */}
-                <div className="col-span-2 flex justify-end">
-                  <span className={`text-xs font-medium ${
-                    entry.change_24h >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                  }`}>
-                    {entry.change_24h >= 0 ? '+' : ''}{entry.change_24h}
-                  </span>
-                </div>
               </Link>
             </motion.div>
           ))
         )}
-      </div>
+      </motion.div>
 
       {/* Total Count */}
       <div className="mt-4 text-center text-sm text-gray-400">

@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Zap } from "lucide-react";
 import Image from "next/image";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Zap, SignalHigh, ExternalLink } from "lucide-react";
+import { useMode } from "@/app/store/ModeContext";
+import { useSignals } from "@/utils/hooks/useSignals";
 
 interface Creator {
   fid: number;
@@ -23,6 +25,10 @@ interface CreatorCardProps {
 }
 
 export default function CreatorCard({ creator, onTrade, rank }: CreatorCardProps) {
+  const { mode } = useMode();
+  const { getSignalForCreator } = useSignals();
+  const signal = getSignalForCreator(creator.fid);
+
   const scoreColor = creator.score >= 800 ? 'text-emerald-500' : 
                      creator.score >= 500 ? 'text-amber-500' : 'text-rose-500';
   
@@ -34,14 +40,39 @@ export default function CreatorCard({ creator, onTrade, rank }: CreatorCardProps
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="bg-white rounded-xl overflow-hidden border border-[#A1E3F9] shadow-sm hover:shadow-xl transition-all group"
+      className={`relative bg-white rounded-xl overflow-hidden border shadow-sm hover:shadow-xl transition-all group ${
+        mode === 'CORE' && signal ? 'border-[#3674B5] ring-1 ring-[#3674B5]/20' : 'border-[#A1E3F9]'
+      }`}
     >
       {/* Header Gradient */}
-      <div className="h-20 bg-gradient-to-r from-[#3674B5] via-[#578FCA] to-[#A1E3F9] relative">
+      <div className={`h-20 relative ${
+        mode === 'CORE' 
+          ? 'bg-linear-to-r from-[#1E293B] via-[#334155] to-[#475569]' // Darker for Core
+          : 'bg-linear-to-r from-[#3674B5] via-[#578FCA] to-[#A1E3F9]'
+      }`}>
         {/* Rank Badge */}
         {rank && (
           <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold text-[#3674B5] shadow-sm">
             #{rank}
+          </div>
+        )}
+        
+        {/* Signal Badge for Core Mode with Token Icon */}
+        {mode === 'CORE' && signal && (
+          <div className="absolute top-3 left-14 flex items-center gap-1">
+            <div className="relative w-6 h-6">
+              <Image
+                src={`/logo_token/${signal.asset.toLowerCase()}-icon.png`}
+                alt={signal.asset}
+                fill
+                className="object-contain"
+              />
+            </div>
+            <div className={`px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm ${
+              signal.type === 'BULLISH' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
+            }`}>
+              {signal.type === 'BULLISH' ? '🚀' : '📉'}
+            </div>
           </div>
         )}
         
@@ -73,46 +104,86 @@ export default function CreatorCard({ creator, onTrade, rank }: CreatorCardProps
         </h3>
         <p className="text-sm text-gray-400 mb-3">@{creator.username}</p>
 
-        {/* Score */}
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase tracking-wider">Score</div>
-            <div className={`font-pixel text-2xl ${scoreColor}`}>
-              {creator.score}
+        {/* Core Mode: Show Signal Info with Evidence Link */}
+        {mode === 'CORE' && signal ? (
+           <div className="mb-4 bg-gray-50 rounded-lg p-2 border border-dashed border-gray-200">
+             <div className="flex items-center justify-between mb-1">
+               <span className="text-xs text-gray-500 font-medium">Latest Signal</span>
+               <a 
+                 href={signal.cast_url} 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1"
+               >
+                 Evidence <ExternalLink size={10} />
+               </a>
+             </div>
+             <div className="text-sm font-bold text-[#3674B5] leading-tight">
+               &quot;{signal.reasoning}&quot;
+             </div>
+             <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400">
+               <span>Target: {signal.asset}</span>
+               <span>•</span>
+               <span>Conf: {signal.confidence}%</span>
+             </div>
+           </div>
+        ) : (
+          /* Free Mode: Standard Score */
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="text-center">
+              <div className="text-xs text-gray-400 uppercase tracking-wider">Score</div>
+              <div className={`font-pixel text-2xl ${scoreColor}`}>
+                {creator.score}
+              </div>
             </div>
-          </div>
-          
-          {/* 24h Change */}
-          <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase tracking-wider">24h</div>
-            <div className={`flex items-center justify-center gap-1 text-sm font-medium ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-              {isPositive ? '+' : ''}{change}
+            
+            {/* 24h Change */}
+            <div className="text-center">
+              <div className="text-xs text-gray-400 uppercase tracking-wider">24h</div>
+              <div className={`flex items-center justify-center gap-1 text-sm font-medium ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {isPositive ? '+' : ''}{change}
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Follower Count */}
-        {creator.follower_count && (
-          <div className="text-xs text-gray-400 mb-4">
-            {(creator.follower_count / 1000).toFixed(1)}K followers
           </div>
         )}
 
-        {/* Trade Buttons */}
-        <div className="grid grid-cols-2 gap-2">
-          <button 
-            onClick={() => onTrade(creator, 'CALL')}
-            className="flex items-center justify-center gap-1.5 py-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 font-bold text-sm border border-emerald-100 transition-colors group-hover:scale-[1.02]"
-          >
-            <ArrowUpRight size={16} /> IGNITE
-          </button>
-          <button 
-            onClick={() => onTrade(creator, 'PUT')}
-            className="flex items-center justify-center gap-1.5 py-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-bold text-sm border border-rose-100 transition-colors group-hover:scale-[1.02]"
-          >
-            <ArrowDownRight size={16} /> ECLIPSE
-          </button>
+        <div className="flex gap-2">
+          {mode === 'CORE' ? (
+             <button 
+                onClick={() => {
+                   if (signal) {
+                      onTrade(creator, signal.type === 'BULLISH' ? 'CALL' : 'PUT');
+                   }
+                }}
+                disabled={!signal}
+                className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-[1.02] flex items-center justify-center gap-2 ${
+                  signal 
+                    ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' 
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
+             >
+                <Zap size={18} />
+                {signal ? 'Follow Signal' : 'No Signal'}
+             </button>
+          ) : (
+            <>
+              <button 
+                onClick={() => onTrade(creator, 'CALL')}
+                className="flex-1 py-3 bg-[#A1E3F9] hover:bg-[#8CDCF8] text-[#3674B5] rounded-xl font-bold shadow-lg shadow-[#A1E3F9]/20 transition-transform hover:scale-[1.02] flex items-center justify-center gap-2"
+              >
+                <TrendingUp size={18} />
+                IGNITE
+              </button>
+              <button 
+                onClick={() => onTrade(creator, 'PUT')}
+                className="flex-1 py-3 bg-[#1E293B] hover:bg-[#334155] text-white rounded-xl font-bold shadow-lg shadow-[#1E293B]/20 transition-transform hover:scale-[1.02] flex items-center justify-center gap-2"
+              >
+                <TrendingDown size={18} className="text-gray-400" />
+                ECLIPSE
+              </button>
+            </>
+          )}
         </div>
       </div>
     </motion.div>

@@ -4,11 +4,24 @@ import { LogOut } from "lucide-react";
 import { useAccount, useDisconnect } from "wagmi";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 import NovaSidebar from "../components/dashboard/NovaSidebar";
+import ModeToggle from "../components/dashboard/ModeToggle";
 import QuestWidget from "../components/gamification/QuestWidget";
 import FutureNavbar from "../components/navigation/FutureNavbar";
 
+import { ModeProvider } from "../store/ModeContext";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ModeProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </ModeProvider>
+  );
+}
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
+
   const { isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const router = useRouter();
@@ -20,17 +33,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isConnected, router]);
 
+  const handleLogout = async () => {
+    try {
+      disconnect();
+      // Use window.location for a hard reset of state, ensuring a clean logout experience
+      window.location.href = "/login";
+    } catch (error) {
+       console.error("Logout failed:", error);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-[#F0F9FF] to-[#D1F8EF] selection:bg-[#3674B5] selection:text-white">
+    <div className="flex min-h-screen bg-linear-to-br from-[#F0F9FF] to-[#D1F8EF] selection:bg-[#3674B5] selection:text-white">
       
-      {/* Logout Button (Fixed Top Right) */}
-      <button 
-        onClick={() => disconnect()}
-        className="fixed top-4 right-4 z-50 p-2.5 bg-white/80 backdrop-blur-md rounded-full text-[#3674B5] hover:bg-red-50 hover:text-red-500 shadow-lg border border-[#A1E3F9] transition-all group"
-        title="Log Out"
-      >
-        <LogOut size={20} className="group-hover:scale-110 transition-transform" />
-      </button>
+      {/* Top Right Controls - Mode Toggle + Logout */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+        <ModeToggle />
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleLogout}
+          className="p-2.5 bg-white/80 backdrop-blur-md rounded-full text-[#3674B5] hover:bg-red-50 hover:text-red-500 shadow-lg border border-[#A1E3F9] transition-all group pointer-events-auto"
+          title="Log Out"
+        >
+          <LogOut size={20} className="group-hover:scale-110 transition-transform" />
+        </motion.button>
+      </div>
 
       {/* Top Navigation - actually Bottom now */}
       <FutureNavbar />
@@ -66,7 +94,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="absolute w-1 h-1 bg-[#A1E3F9] rounded-full animate-pulse" 
                  style={{ top: '60%', left: '25%', animationDelay: '0.5s', animationDuration: '3.5s' }} />
             {/* Star 4 */}
-            <div className="absolute w-2 h-2 bg-gradient-to-br from-[#3674B5] to-transparent rounded-full animate-pulse opacity-40" 
+            <div className="absolute w-2 h-2 bg-linear-to-br from-[#3674B5] to-transparent rounded-full animate-pulse opacity-40" 
                  style={{ top: '40%', right: '35%', animationDelay: '2s', animationDuration: '5s' }} />
             {/* Star 5 */}
             <div className="absolute w-1 h-1 bg-[#578FCA] rounded-full animate-pulse" 

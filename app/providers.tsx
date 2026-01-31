@@ -5,13 +5,13 @@ import "@coinbase/onchainkit/styles.css"; // Required for v1.0
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { type State, WagmiProvider } from "wagmi";
-import { base } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { createConfig, http } from "wagmi";
 import { coinbaseWallet } from "wagmi/connectors";
 
 // Configure Wagmi
 const config = createConfig({
-  chains: [base],
+  chains: [base, baseSepolia],
   connectors: [
     coinbaseWallet({
       appName: "CreatorArena",
@@ -20,6 +20,7 @@ const config = createConfig({
   ],
   transports: {
     [base.id]: http("https://mainnet.base.org"),
+    [baseSepolia.id]: http("https://sepolia.base.org"),
   },
 });
 
@@ -31,7 +32,7 @@ export function Providers({ children, initialState }: { children: ReactNode; ini
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
           apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-          chain={base}
+          chain={base} // Keep Base as default for UI components
           config={{
             appearance: {
               name: "CreatorArena",
@@ -43,6 +44,7 @@ export function Providers({ children, initialState }: { children: ReactNode; ini
               display: "modal",
               preference: "all",
             },
+            paymaster: `https://api.developer.coinbase.com/rpc/v1/base/${process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}`,
           }}
         >
           {children}

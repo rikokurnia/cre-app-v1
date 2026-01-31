@@ -41,43 +41,55 @@ function generateConsistentChange(fid: number): number {
 
 export async function GET() {
   try {
-    // Fetch trending feed from Neynar
+    // Fetch trending feed (same as leaderboard)
     const trendingFeed = await client.fetchTrendingFeed({
-      limit: 20,
+      limit: 50, // Fetch more to match leaderboard depth
       timeWindow: '24h' as any,
     });
 
-    // Extract unique creators from trending casts
-    const creatorMap = new Map<number, Creator>();
-    
-    trendingFeed.casts.forEach((cast: any, index: number) => {
+    // Build creators list from trending casts (same aggregation logic as leaderboard)
+    const creatorScores = new Map<number, { 
+      user: any; 
+      totalScore: number; 
+      castCount: number;
+    }>();
+
+    trendingFeed.casts.forEach((cast: any) => {
       const author = cast.author;
-      if (!creatorMap.has(author.fid)) {
-        creatorMap.set(author.fid, {
-          fid: author.fid,
-          username: author.username,
-          display_name: author.display_name || author.username,
-          pfp_url: author.pfp_url || 'https://avatar.vercel.sh/' + author.username,
-          score: calculateScore(cast),
-          follower_count: author.follower_count || 0,
-          power_badge: author.power_badge || false,
-          trending_rank: index + 1,
-          change_24h: generateConsistentChange(author.fid),
-        });
+      const likes = cast.reactions?.likes_count || 0;
+      const recasts = cast.reactions?.recasts_count || 0;
+      const replies = cast.replies?.count || 0;
+      const castScore = (likes * 2) + (recasts * 3) + (replies * 2.5);
+
+      if (creatorScores.has(author.fid)) {
+        const existing = creatorScores.get(author.fid)!;
+        existing.totalScore += castScore;
+        existing.castCount += 1;
       } else {
-        // Update score if this cast has higher engagement
-        const existing = creatorMap.get(author.fid)!;
-        const newScore = calculateScore(cast);
-        if (newScore > existing.score) {
-          existing.score = newScore;
-        }
+        creatorScores.set(author.fid, {
+          user: author,
+          totalScore: castScore,
+          castCount: 1,
+        });
       }
     });
 
     // Convert to array and sort by score
-    const creators = Array.from(creatorMap.values())
+    const creators = Array.from(creatorScores.entries())
+      .map(([fid, data]) => ({
+        fid,
+        username: data.user.username,
+        display_name: data.user.display_name || data.user.username,
+        pfp_url: data.user.pfp_url || `https://avatar.vercel.sh/${data.user.username}`,
+        score: Math.min(Math.round(data.totalScore / data.castCount * 5), 1000),
+        follower_count: data.user.follower_count || 0,
+        power_badge: data.user.power_badge || false,
+        trending_rank: 0, // Set after sort
+        change_24h: generateConsistentChange(fid),
+      }))
       .sort((a, b) => b.score - a.score)
-      .slice(0, 12);
+      .map((entry, index) => ({ ...entry, trending_rank: index + 1 }))
+      .slice(0, 12); // Limit to top 12 for dashboard
 
     return NextResponse.json({ 
       creators,
@@ -85,12 +97,11 @@ export async function GET() {
     });
     
   } catch (error) {
-    console.error('Neynar API Error:', error);
+    console.warn('Neynar API Error (Trending), utilizing static fallback.', error);
     
-    // 1. Try fetching specific "VIP" users directly (this endpoint often works when trending feed fails)
+    // 1. Try fetching "VIP" users directly as fallback (Same as Leaderboard)
     try {
-      // FIDs: DWR, V, Vitalik, Sriram, Betashop, Jesse Pollak
-      const vipFids = [3, 2, 5650, 1214, 602, 99];
+      const vipFids = [5650, 3, 2, 99, 1214, 602]; // Vitalik, DWR, V, Jesse, Sriram, Betashop
       const usersResponse = await client.fetchBulkUsers({ fids: vipFids });
       
       if (usersResponse.users && usersResponse.users.length > 0) {
@@ -98,8 +109,8 @@ export async function GET() {
             fid: user.fid,
             username: user.username,
             display_name: user.display_name || user.username,
-            pfp_url: user.pfp_url, // Real URL from API
-            score: 950 - (index * 20) + Math.floor(Math.random() * 50), // Mock score
+            pfp_url: user.pfp_url,
+            score: 999 - (index * 20) + Math.floor(Math.random() * 50),
             follower_count: user.follower_count,
             power_badge: user.power_badge,
             trending_rank: index + 1,

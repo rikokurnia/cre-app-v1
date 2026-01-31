@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   description: "Predict Farcaster Creators. Build Your Deck. Win Rewards.",
 };
 
+import { Toaster } from 'sonner';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,6 +39,7 @@ export default function RootLayout({
       >
         <Providers>
           {children}
+          <Toaster richColors position="top-right" />
         </Providers>
       </body>
     </html>

@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Layers, ArrowUpRight, ArrowDownRight, Star, TrendingUp, TrendingDown } from "lucide-react";
+import { Layers, ArrowUpRight, ArrowDownRight, Star, TrendingUp, TrendingDown, Filter } from "lucide-react";
 import { useUserStore } from "@/app/store/useUserStore";
 import Link from "next/link";
 import { calculateRarity, RARITY_STYLES } from "@/utils/game/rarity";
@@ -18,6 +19,7 @@ const VIP_AVATARS: Record<string, string> = {
 
 export default function DeckPage() {
   const { portfolio } = useUserStore();
+  const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'CLOSED'>('ALL');
 
   // Get unique creators from positions
   const creatorCards = new Map<number, {
@@ -64,6 +66,10 @@ export default function DeckPage() {
     const rarity = calculateRarity(invested, current, 'CALL'); // Treat as generic ROI
     
     return { ...card, rarity, style: RARITY_STYLES[rarity] };
+  }).filter(card => {
+    if (filter === 'ACTIVE') return card.activePositions > 0;
+    if (filter === 'CLOSED') return card.closedPositions > 0;
+    return true;
   });
 
   return (
@@ -75,22 +81,42 @@ export default function DeckPage() {
           <h2 className="text-4xl font-heading text-[#3674B5]">My Deck</h2>
         </div>
         <p className="text-[#3674B5]/60">
-          Your collection of creator cards from paper trading
+          Your collection of creator cards from live trading
         </p>
       </header>
 
-      {/* Stats */}
-      <div className="flex items-center gap-6 mb-8 p-4 bg-white rounded-xl border border-[#A1E3F9]">
-        <div className="flex items-center gap-2">
-          <Star className="text-amber-500" size={20} />
-          <span className="font-heading text-lg text-[#3674B5]">{cards.length}</span>
-          <span className="text-gray-400">Unique Creators</span>
+      {/* Stats & Filter Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        {/* Stats */}
+        <div className="flex items-center gap-6 p-4 bg-white rounded-xl border border-[#A1E3F9] w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Star className="text-amber-500" size={20} />
+            <span className="font-heading text-lg text-[#3674B5]">{cards.length}</span>
+            <span className="text-gray-400">Cards</span>
+          </div>
+          <div className="h-6 w-px bg-gray-200" />
+          <div className="flex items-center gap-2">
+            <TrendingUp className="text-emerald-500" size={20} />
+            <span className="font-heading text-lg text-[#3674B5]">{portfolio.length}</span>
+            <span className="text-gray-400">Total Trades</span>
+          </div>
         </div>
-        <div className="h-6 w-px bg-gray-200" />
-        <div className="flex items-center gap-2">
-          <TrendingUp className="text-emerald-500" size={20} />
-          <span className="font-heading text-lg text-[#3674B5]">{portfolio.length}</span>
-          <span className="text-gray-400">Total Trades</span>
+
+        {/* Filter Controls */}
+        <div className="flex bg-gray-100/50 p-1 rounded-full border border-gray-200">
+            {(['ALL', 'ACTIVE', 'CLOSED'] as const).map(f => (
+                <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                        filter === f 
+                        ? 'bg-[#3674B5] text-white shadow-md' 
+                        : 'text-gray-500 hover:text-[#3674B5] hover:bg-white/50'
+                    }`}
+                >
+                    {f}
+                </button>
+            ))}
         </div>
       </div>
 
@@ -98,7 +124,7 @@ export default function DeckPage() {
       {cards.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">🃏</div>
-          <h3 className="text-xl font-heading text-[#3674B5] mb-2">Your Deck is Empty</h3>
+          <h3 className="text-xl font-heading text-[#3674B5] mb-2">No {filter !== 'ALL' ? filter.toLowerCase() : ''} cards found</h3>
           <p className="text-gray-400 mb-6">Start trading to collect creator cards!</p>
           <Link 
             href="/dashboard" 
