@@ -169,9 +169,9 @@ async function main() {
     
     // Safety check: ensure > 1e12 (0.000001 contracts) as per user notes on minimums
     // "Users shd be able to take ... as little as 0.000001 contracts"
-    if (numContractsToFill < 1000000000000n) {
+    if (numContractsToFill < BigInt("1000000000000")) {
         console.log("Calculated contracts too small. Boosting to min 1e12 (0.000001 contracts).");
-        numContractsToFill = 1000000000000n;
+        numContractsToFill = BigInt("1000000000000");
     }
 
     console.log(`Target Spend: ${targetSpendUSDC} USDC (approx)`);
@@ -184,7 +184,7 @@ async function main() {
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [OPTION_BOOK_ADDRESS, targetSpendUnits * 10n] // 10x buffer
+        args: [OPTION_BOOK_ADDRESS, targetSpendUnits * BigInt(10)] // 10x buffer
     });
     console.log(`Approve TX Hash: ${approveTx}`);
     await client.waitForTransactionReceipt({ hash: approveTx });
