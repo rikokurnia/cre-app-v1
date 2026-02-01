@@ -79,9 +79,9 @@ export const AnimatedConnector = ({ fromId, toId, trigger }: { fromId: string, t
                 r="4" 
                 fill="#3674B5"
             >
-                <motion.animateMotion 
+                <animateMotion 
                    dur="1s" 
-                   repeatCount="1" // Run once per trigger
+                   repeatCount="1"
                    path={d}
                 />
             </motion.circle>
