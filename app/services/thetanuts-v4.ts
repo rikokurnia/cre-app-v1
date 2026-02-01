@@ -20,7 +20,7 @@ export interface OptionChainData {
   optionBookAddress?: string;
 }
 
-const ENDPOINT_URL = "https://round-snowflake-9c31.devops-118.workers.dev/basic-option-book/option-chain";
+const ENDPOINT_URL = typeof window !== 'undefined' ? "/api/thetanuts/chain" : "https://round-snowflake-9c31.devops-118.workers.dev/basic-option-book/option-chain";
 
 /**
  * Fetches the Option Chain for a given asset.
