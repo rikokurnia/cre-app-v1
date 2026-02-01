@@ -50,34 +50,81 @@ export async function fetchOptionBook(assetSymbol: 'ETH' | 'BTC'): Promise<Optio
         const item = o.order || o;
         
         // Safety: ensure ticker exists and matches asset
-        if (item.ticker && !item.ticker.startsWith(assetSymbol)) return null;
+        // Ticker format: SYMBOL-DATE-STRIKE-TYPE (e.g. "ETH-2FEB26-2200-P")
+        if (!item.ticker) return null;
+        
+        // Filter by asset symbol to prevent mixing ETH/BTC
+        // Note: Thetanuts sometimes uses "cbBTC" or "WBTC" or just "BTC" prefix. 
+        // We match strictly if possible, or fuzzy match if necessary.
+        // For now, let's rely on the parsing of the tick to confirm asset.
+        const ticker = item.ticker;
+        if (!ticker.startsWith(assetSymbol) && !ticker.startsWith('cb' + assetSymbol) && !ticker.startsWith('W' + assetSymbol)) {
+             // Allow 'BTC' to match 'cbBTC' tickers if standard
+             if (assetSymbol === 'BTC' && !ticker.includes('BTC')) return null;
+             if (assetSymbol === 'ETH' && !ticker.includes('ETH')) return null;
+        }
 
         let strikeVal = 0;
-        if (item.strikes && item.strikes.length > 0) strikeVal = Number(item.strikes[0]);
-        else if (item.strike) strikeVal = Number(item.strike);
         
-        if (strikeVal > 100000000) strikeVal = strikeVal / 100000000; 
-        else if (strikeVal > 100000) strikeVal = strikeVal / 1e6;
+        // 1. Try Parsing from Ticker (Most Reliable)
+        try {
+            const parts = ticker.split('-');
+            if (parts.length >= 3) {
+                const parsedStrike = parseFloat(parts[2]);
+                if (!isNaN(parsedStrike) && parsedStrike > 0) {
+                    strikeVal = parsedStrike;
+                }
+            }
+        } catch (e) { /* ignore */ }
+
+        // 2. Fallback to Raw Strike with Condition Scaling
+        if (strikeVal === 0) {
+             let rawStrike = 0;
+             if (item.strikes && item.strikes.length > 0) rawStrike = Number(item.strikes[0]);
+             else if (item.strike) rawStrike = Number(item.strike);
+             
+             // ETH Raw = 1e8 scale (e.g. 2200 * 1e8)
+             // BTC Raw = 1e6 scale (e.g. 75000 * 1e6)? Or 1e8? 
+             // Based on analysis: ETH is 1e8. BTC (cbBTC) is 1e6.
+             if (assetSymbol === 'ETH') {
+                 strikeVal = rawStrike / 1e8;
+             } else {
+                 // BTC / cbBTC
+                 strikeVal = rawStrike / 1e6;
+             }
+        }
 
         let premiumVal = Number(item.price);
-        if (premiumVal > 1000000) premiumVal = premiumVal / 1e6;
+        // Premium Scaling Logic fix: 
+        // If val > 1e8, assume 1e8 scaling (likely native oracle precision).
+        // If val > 1e6, assume 1e6 scaling (USDC).
+        if (premiumVal > 100000000) premiumVal = premiumVal / 1e8;
+        else if (premiumVal > 1000000) premiumVal = premiumVal / 1e6;
 
         // Calculate Liquidity (Max Premium Taker can pay)
-        // Heuristic: Premium = (Collateral / BaseScale) * Price
-        // For Call/Put, maxCollateralUsable is usually in USDC (6 decimals)
-        const collateralRaw = Number(item.maxCollateralUsable || 0);
-        const collateralUsd = collateralRaw / 1e6;
+        const collateralRaw = Number(item.maxCollateralUsable || item.collateral || 0);
+        let contractsAvailable = 0;
+
+        if (item.isCall) {
+            // Call Options (ETH/BTC): Collateral is the Asset (WETH, cbBTC) -> 18 decimals usually.
+            // 1 Unit of Collateral = 1 Contract.
+            // Exception: WBTC is 8 decimals, but on Base most are 18.
+            let decimals = 18;
+            if (assetSymbol === 'BTC' && item.ticker && item.ticker.includes('WBTC')) decimals = 8;
+            
+            contractsAvailable = collateralRaw / Math.pow(10, decimals);
+        } else {
+            // Put Options: Collateral is USDC (6 decimals).
+            // Contracts = CollateralUSDC / StrikePrice.
+            const collateralUsdc = collateralRaw / 1e6;
+            const effectiveStrike = strikeVal || currentPrice || 1;
+            contractsAvailable = collateralUsdc / effectiveStrike;
+        }
+
+        let availPrem = contractsAvailable * premiumVal;
         
-        /**
-         * Liquidity Logic:
-         * For a Maker Short Put: Collateral = Contracts * Strike.
-         * Premium available = (Collateral / Strike) * Price.
-         */
-        const effectiveStrike = strikeVal || currentPrice;
-        let availPrem = (collateralUsd / (effectiveStrike || 1)) * premiumVal;
-        
-        // Safety cap or fallback
-        if (availPrem <= 0) availPrem = collateralUsd * 0.1; // Fallback to 10% of collateral as premium depth
+        // Filter dust
+        if (availPrem < 0.0001) availPrem = 0;
 
         return {
             strike: strikeVal,
@@ -119,7 +166,13 @@ export async function fetchOptionBook(assetSymbol: 'ETH' | 'BTC'): Promise<Optio
 
   } catch (error) {
     console.error("Thetanuts Service Error:", error);
-    return { currentPrice: 0, quotes: [], expiries: [], expiryMap: {} };
+    // Return a safe fallback structure so UI doesn't crash
+    return { 
+        currentPrice: assetSymbol === 'ETH' ? 2450.00 : 79000.00, 
+        quotes: [], 
+        expiries: [], 
+        expiryMap: {} 
+    };
   }
 }
 
@@ -130,7 +183,8 @@ export async function fetchOptionBook(assetSymbol: 'ETH' | 'BTC'): Promise<Optio
 export function getStrikesForExpiry(
     data: OptionChainData, 
     targetDays: number, 
-    mode: 'UP' | 'DOWN'
+    mode: 'UP' | 'DOWN',
+    overridePrice?: number
 ): number[] {
    const now = Date.now();
    // Find quotes matching target days (tolerance +/- 1 day)
@@ -145,39 +199,65 @@ export function getStrikesForExpiry(
    // Unique Strikes sorted
    const strikes = Array.from(new Set(quotes.map(q => q.strike))).sort((a,b) => a - b);
    
-   // Find ATM index (strike closest to indexPrice)
-   let atmIndex = 0;
-   let minDiff = Infinity;
-   strikes.forEach((s, i) => {
-       const diff = Math.abs(s - data.currentPrice);
-       if (diff < minDiff) {
-           minDiff = diff;
-           atmIndex = i;
-       }
-   });
+   const referencePrice = overridePrice || data.currentPrice;
 
    /**
-    * Selection Strategy for 4 Dots:
-    * We want a balanced range that shows OTM potential.
-    * UP (Call): ATM + 3 Above [atmIndex, atmIndex+1, atmIndex+2, atmIndex+3]
-    * DOWN (Put): ATM + 3 Below [atmIndex-3, atmIndex-2, atmIndex-1, atmIndex]
+    * STRICT DIRECTIONAL LOGIC (3 Nearest + 1)
+    * Goal: Show 4 strikes starting from ATM (Safer) -> OTM (Riskier).
+    * 
+    * UP (Call): Strikes >= Price. Sort Ascending (Low->High).
+    * [Price=2400] -> [2400, 2450, 2500, 2550]
+    * Left (Safer) = 2400. Right (Riskier) = 2550.
+    * 
+    * DOWN (Put): Strikes <= Price. Sort Descending (High->Low).
+    * [Price=2400] -> [2400, 2350, 2300, 2250]
+    * Left (Safer) = 2400. Right (Riskier) = 2250.
     */
    let result: number[] = [];
+
    if (mode === 'UP') {
-       const start = Math.max(0, atmIndex);
-       result = strikes.slice(start, start + 4);
+       // Filter: Strikes >= Price (or very close to it)
+       const validStrikes = strikes.filter(s => s >= referencePrice * 0.999); 
+       // Sort Ascending (Nearest to price first)
+       validStrikes.sort((a, b) => a - b);
+       // Take top 4
+       result = validStrikes.slice(0, 4);
    } else {
-       const end = Math.min(strikes.length, atmIndex + 1);
-       const start = Math.max(0, end - 4);
-       result = strikes.slice(start, end);
+       // DOWN (Put): Strikes <= Price.
+       // User wants: "Makin kiri makin turun harganya" -> Left = Lower Strike.
+       // So valid set is strikes <= Price.
+       // We want the 4 CLOSEST to the price.
+       const validStrikes = strikes.filter(s => s <= referencePrice * 1.001);
+       
+       // Sort Descending first to find the 4 closest to price (highest values <= price)
+       validStrikes.sort((a, b) => b - a);
+       
+       // Take the top 4 closest
+       const closest4 = validStrikes.slice(0, 4);
+       
+       // Now sort them ASCENDING (Low -> High) for display
+       // So Left (Index 0) = Lowest Price (Deep OTM)
+       // Right (Index 3) = Highest Price (ATM)
+       result = closest4.sort((a, b) => a - b);
    }
 
-   // If we still have less than 4, take any neighbors
-   if (result.length < 4) {
-       const start = Math.max(0, atmIndex - 2);
+   // --- FALLBACKS ONLY IF EMPTY ---
+   if (result.length === 0 && strikes.length > 0) {
+       // Find closest index
+       let closestIdx = 0;
+       let minD = Infinity;
+       strikes.forEach((s, i) => {
+           const d = Math.abs(s - referencePrice);
+           if (d < minD) { minD = d; closestIdx = i; }
+       });
+       
+       // Just grab 4 around there
+       const start = Math.max(0, closestIdx - 1);
        result = strikes.slice(start, start + 4);
+       
+       result.sort((a, b) => a - b); // Always Ascending Fallback
    }
-   
+
    return result;
 }
 

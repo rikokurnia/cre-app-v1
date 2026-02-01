@@ -5,29 +5,28 @@ export interface MarketPrice {
 
 export const PriceService = {
   /**
-   * Fetches real-time price and 24h change from CoinGecko.
-   * Uses the simple price API.
+   * Fetches real-time price and 24h change from Binance API.
+   * Binance is generally more reliable and has higher limits for public data.
    */
   async getMarketPrice(symbol: 'ETH' | 'BTC'): Promise<MarketPrice> {
     try {
-      const id = symbol === 'ETH' ? 'ethereum' : 'bitcoin';
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd&include_24hr_change=true`;
+      // Use internal API proxy to avoid CORS issues on client
+      const url = `/api/prices?symbol=${symbol}`;
       
-      const res = await fetch(url, { next: { revalidate: 60 } }); // Cache for 1 min
-      if (!res.ok) throw new Error("CoinGecko API Error");
+      const res = await fetch(url, { cache: 'no-store' }); 
+      if (!res.ok) throw new Error("Price API Error");
       
       const data = await res.json();
-      const assetData = data[id];
       
       return {
-        price: assetData.usd,
-        change24h: assetData.usd_24h_change
+        price: parseFloat(data.lastPrice),
+        change24h: parseFloat(data.priceChangePercent)
       };
     } catch (error) {
-      console.error("Price Service Error:", error);
-      // Fallback to rough current market prices if API fails
+      console.warn("Price API Failed, using fallback:", error);
+      // Fallback to recent approximate market data so app doesn't break
       return {
-        price: symbol === 'ETH' ? 2705.13 : 85000.00,
+        price: symbol === 'ETH' ? 2450.00 : 79000.00,
         change24h: 0
       };
     }

@@ -92,7 +92,7 @@ import { useUserStore } from '@/app/store/useUserStore';
         console.log(`%c[Thetanuts API] Fetching ${assetKey}...`, 'color: #3674B5; font-weight: bold;');
         
         // Concurrent Fetch
-        const [tnutsData, cgPrice] = await Promise.all([
+        const [tnutsData, binanceData] = await Promise.all([
             fetchOptionBook(assetKey),
             PriceService.getMarketPrice(assetKey)
         ]);
@@ -100,13 +100,13 @@ import { useUserStore } from '@/app/store/useUserStore';
         // --- VERIFICATION LOG ---
         console.log(`%c[Thetanuts API] DATA RECEIVED for ${assetKey}:`, 'color: #4CAF50; font-weight: bold;', {
             thetanutsIdx: tnutsData.currentPrice,
-            coingeckoPrice: cgPrice.price,
-            change24h: cgPrice.change24h,
+            binancePrice: binanceData.price,
+            change24h: binanceData.change24h,
             totalQuotes: tnutsData.quotes.length
         });
         
         setMarketData(tnutsData);
-        setPriceInfo(cgPrice);
+        setPriceInfo(binanceData);
     };
     fetchMarket();
     // Poll every 30s
@@ -114,20 +114,22 @@ import { useUserStore } from '@/app/store/useUserStore';
     return () => clearInterval(interval);
   }, [selectedAsset]);
 
-  // Use Real Price from Market Data or fall back to CoinGecko
-  const currentPrice = marketData?.currentPrice || priceInfo?.price || (selectedAsset.id === 'ethereum' ? 2705.13 : 85000.00); 
+  // Use Real Price from Binance/PriceService (Priority) > Market Data > Static Fallback
+  const currentPrice = priceInfo?.price || marketData?.currentPrice || (selectedAsset.id === 'ethereum' ? 2705.13 : 85000.00); 
   const priceChange = priceInfo?.change24h || 0; 
 
   // Generate Strike Prices from Real Data
   const strikes = useMemo(() => {
     if (!marketData) return [];
-    const results = getStrikesForExpiry(marketData, expiry, mode as 'UP' | 'DOWN');
+    
+    // Pass 'currentPrice' (Binance or Real) as override to ensure ATM is centered correctly
+    const results = getStrikesForExpiry(marketData, expiry, mode as 'UP' | 'DOWN', currentPrice);
     
     // --- STRIKE VERIFICATION LOG ---
     console.log(`%c[Thetanuts PROOF] Generated Strikes for ${expiry}D (${mode}):`, 'color: #FF9800; font-weight: bold;', results);
     
     return results.slice(0, 4); 
-  }, [marketData, expiry, mode]);
+  }, [marketData, expiry, mode, currentPrice]);
 
   const selectedStrike = strikes[strikeIndex] || strikes[0] || (typeof currentPrice === 'number' ? currentPrice : 0);
 
@@ -137,11 +139,32 @@ import { useUserStore } from '@/app/store/useUserStore';
 
     const targetExpiryMs = marketData.expiryMap[expiry] || (Date.now() + expiry * 86400000);
     
-    return marketData.quotes.find(q => 
-        q.strike === selectedStrike && 
-        Math.abs(q.expiry.getTime() - targetExpiryMs) < 3600000 && // Within 1 hour
-        q.type === (mode === 'UP' ? 'Call' : 'Put')
-    );
+    const found = marketData.quotes.find(q => {
+        // Strike Matching with tolerance
+        const strikeMatch = Math.abs(q.strike - selectedStrike) < 0.0001;
+        
+        // Expiry Matching (Day-level tolerance)
+        const diffMs = q.expiry.getTime() - Date.now();
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        const expiryMatch = Math.abs(days - expiry) <= 1; // +/- 1 day tolerance
+        
+        // Type Matching
+        const typeMatch = q.type === (mode === 'UP' ? 'Call' : 'Put');
+
+        return strikeMatch && expiryMatch && typeMatch;
+    });
+
+
+
+    console.log(`%c[PREMIUM DEBUG] Looking for: Strike=${selectedStrike} Expiry=${expiry}D Mode=${mode}`, 'color: cyan', {
+        found: !!found,
+        premium: found?.premium,
+        availablePremium: found?.availablePremium,
+        expiryQuote: found?.expiry,
+        totalQuotes: marketData.quotes.length
+    });
+
+    return found;
   };
   
   const activeQuote = getSelectedQuote();
@@ -344,6 +367,18 @@ import { useUserStore } from '@/app/store/useUserStore';
                  
                  {/* Track Line */}
                  <div className="absolute top-1/2 left-0 w-full h-2 bg-gray-100 rounded-full -translate-y-1/2"></div>
+
+                 {/* Filled Progress Line */}
+                 <div 
+                    className={`absolute top-1/2 h-2 rounded-full -translate-y-1/2 transition-all duration-300 pointer-events-none ${
+                        mode === 'UP' ? 'left-0 bg-green-500' : 'right-0 bg-red-500'
+                    }`}
+                    style={{ 
+                        width: mode === 'UP' 
+                            ? `${(strikeIndex / (strikes.length - 1 || 3)) * 100}%` 
+                            : `${((strikes.length - 1 - strikeIndex) / (strikes.length - 1 || 3)) * 100}%`
+                    }}
+                 ></div>
                  
                  {/* Dots */}
                  <div className="absolute top-1/2 left-0 w-full flex justify-between px-2.5 -translate-y-1/2 pointer-events-none z-0">
@@ -428,13 +463,13 @@ import { useUserStore } from '@/app/store/useUserStore';
                 </div>
             </div>
 
-             {/* Available Premium / Cost Display */}
+             {/* Available Premium Display - LINKED TO API */}
              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                      {isLiquidityExceeded ? 'Insufficient Liq.' : 'Available Premium'}
                  </span>
                  <span className={`text-sm font-black font-mono tracking-tight ${isLiquidityExceeded ? 'text-red-500' : 'text-gray-900'}`}>
-                     ${availableLiquidity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                     ${activeQuote?.availablePremium ? activeQuote.availablePremium.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}
                  </span>
              </div>
 
@@ -462,7 +497,7 @@ import { useUserStore } from '@/app/store/useUserStore';
        <div className="lg:flex-[0.3] flex flex-col gap-3">
           
           {/* CHART CARD */}
-          <div className="bg-white rounded-3xl p-5 border border-[#317ac4] shadow-sm relative overflow-hidden flex flex-col h-70">
+          <div className="bg-white rounded-3xl p-5 border border-[#317ac4] shadow-sm relative overflow-visible flex flex-col h-70">
               <div className="flex justify-between items-center mb-2 z-10">
                   <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-wider underline underline-offset-4 decoration-[#A1E3F9]">
                     Option Chart

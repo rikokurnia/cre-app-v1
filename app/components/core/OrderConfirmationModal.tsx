@@ -212,7 +212,7 @@ export default function OrderConfirmationModal({ isOpen, onClose, orderData, onS
                     </div>
                     <div className="text-center">
                         <p className="font-bold text-gray-900 text-lg">Waiting for Signature...</p>
-                        <p className="text-[#3674B5] text-sm font-medium">Confirm transaction (0 ETH) in Wallet</p>
+                        <p className="text-[#3674B5] text-sm font-medium">Confirm transaction in Wallet</p>
                     </div>
                 </div>
             )}
