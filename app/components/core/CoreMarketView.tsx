@@ -160,7 +160,9 @@ import { useUserStore } from '@/app/store/useUserStore';
         found: !!found,
         premium: found?.premium,
         availablePremium: found?.availablePremium,
-        expiryQuote: found?.expiry,
+        collateralRaw: found?.rawOrder?.maxCollateralUsable || found?.rawOrder?.collateral,
+        isCall: found?.type === 'Call',
+        rawOrder: found?.rawOrder,
         totalQuotes: marketData.quotes.length
     });
 
@@ -306,7 +308,14 @@ import { useUserStore } from '@/app/store/useUserStore';
         <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-3">Expiry Date</span>
             <div className="flex justify-between gap-2 overflow-x-auto hide-scrollbar">
-                {(marketData?.expiries?.length ? marketData.expiries : EXPIRY_OPTIONS).map((d) => {
+                {(() => {
+                    const available = marketData?.expiries?.length ? marketData.expiries : EXPIRY_OPTIONS;
+                    const ALLOWED = [1, 2, 3, 7, 28];
+                    const filtered = available.filter(d => ALLOWED.includes(d));
+                    // Show filtered if has items, otherwise fallback to all available (safety)
+                    const toShow = filtered.length > 0 ? filtered : available;
+                    
+                    return toShow.map((d) => {
                     const isActive = expiry === d;
                     return (
                         <button
@@ -326,7 +335,8 @@ import { useUserStore } from '@/app/store/useUserStore';
                             )}
                         </button>
                     );
-                })}
+                });
+                })()}
             </div>
         </div>
 

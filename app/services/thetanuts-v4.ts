@@ -106,13 +106,33 @@ export async function fetchOptionBook(assetSymbol: 'ETH' | 'BTC'): Promise<Optio
         let contractsAvailable = 0;
 
         if (item.isCall) {
-            // Call Options (ETH/BTC): Collateral is the Asset (WETH, cbBTC) -> 18 decimals usually.
-            // 1 Unit of Collateral = 1 Contract.
-            // Exception: WBTC is 8 decimals, but on Base most are 18.
+            // Call Options: 
+            // 1. Try Standard Asset Decimals (18 for ETH, 8 for WBTC)
             let decimals = 18;
             if (assetSymbol === 'BTC' && item.ticker && item.ticker.includes('WBTC')) decimals = 8;
             
-            contractsAvailable = collateralRaw / Math.pow(10, decimals);
+            let contracts = collateralRaw / Math.pow(10, decimals);
+            
+            // 2. Fallback: If contracts barely exist (< 0.001) but raw is large, try alternate scalings.
+            if (contracts < 0.001 && collateralRaw > 1000) {
+                 // Try Gwei/9 decimals (Seen in some Base/Testnet logic)
+                 // 1e9 raw -> 1 contract
+                 const contractsGwei = collateralRaw / 1e9;
+                 
+                 if (contractsGwei >= 0.01 && contractsGwei < 100000) {
+                     contracts = contractsGwei;
+                 } else {
+                     // Try USDC (6 decimals) but normalized by Price
+                     // If collateral is CASH, then Contracts = Cash / AssetPrice
+                     const cashVal = collateralRaw / 1e6;
+                     const assetPrice = currentPrice || strikeVal || 2000;
+                     const contractsCash = cashVal / assetPrice;
+                     
+                     if (contractsCash >= 0.001) contracts = contractsCash;
+                 }
+            }
+            
+            contractsAvailable = contracts;
         } else {
             // Put Options: Collateral is USDC (6 decimals).
             // Contracts = CollateralUSDC / StrikePrice.
@@ -124,7 +144,7 @@ export async function fetchOptionBook(assetSymbol: 'ETH' | 'BTC'): Promise<Optio
         let availPrem = contractsAvailable * premiumVal;
         
         // Filter dust
-        if (availPrem < 0.0001) availPrem = 0;
+        if (availPrem < 0.001) availPrem = 0;
 
         return {
             strike: strikeVal,
@@ -215,31 +235,46 @@ export function getStrikesForExpiry(
     */
    let result: number[] = [];
 
-   if (mode === 'UP') {
-       // Filter: Strikes >= Price (or very close to it)
-       const validStrikes = strikes.filter(s => s >= referencePrice * 0.999); 
-       // Sort Ascending (Nearest to price first)
-       validStrikes.sort((a, b) => a - b);
-       // Take top 4
-       result = validStrikes.slice(0, 4);
-   } else {
-       // DOWN (Put): Strikes <= Price.
-       // User wants: "Makin kiri makin turun harganya" -> Left = Lower Strike.
-       // So valid set is strikes <= Price.
-       // We want the 4 CLOSEST to the price.
-       const validStrikes = strikes.filter(s => s <= referencePrice * 1.001);
-       
-       // Sort Descending first to find the 4 closest to price (highest values <= price)
-       validStrikes.sort((a, b) => b - a);
-       
-       // Take the top 4 closest
-       const closest4 = validStrikes.slice(0, 4);
-       
-       // Now sort them ASCENDING (Low -> High) for display
-       // So Left (Index 0) = Lowest Price (Deep OTM)
-       // Right (Index 3) = Highest Price (ATM)
-       result = closest4.sort((a, b) => a - b);
-   }
+    // --- SLIDING WINDOW STRATEGY (Robust) ---
+    // 1. Sort all strikes ascending
+    strikes.sort((a,b) => a - b);
+    
+    // 2. Find index of strike closest to Reference Price
+    let closestIndex = 0;
+    let minDiff = Number.MAX_VALUE;
+    
+    strikes.forEach((s, i) => {
+        const diff = Math.abs(s - referencePrice);
+        if (diff < minDiff) {
+            minDiff = diff;
+            closestIndex = i;
+        }
+    });
+
+    if (mode === 'UP') {
+        // We want closest + 3 higher strikes
+        // Window: [closest, +1, +2, +3]
+        let start = closestIndex;
+        // Adjust if we overshoot array end
+        if (start + 4 > strikes.length) {
+            start = Math.max(0, strikes.length - 4);
+        }
+        
+        result = strikes.slice(start, start + 4);
+    } else {
+        // DOWN: We want closest + 3 lower strikes
+        // Ideally: [closest-3, closest-2, closest-1, closest]
+        let end = closestIndex + 1; // exclusive end
+        
+        let start = end - 4;
+        // Adjust if we undershoot array start
+        if (start < 0) {
+            start = 0;
+            end = Math.min(4, strikes.length);
+        }
+        
+        result = strikes.slice(start, end);
+    }
 
    // --- FALLBACKS ONLY IF EMPTY ---
    if (result.length === 0 && strikes.length > 0) {
