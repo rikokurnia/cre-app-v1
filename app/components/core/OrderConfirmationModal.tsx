@@ -144,7 +144,7 @@ export default function OrderConfirmationModal({ isOpen, onClose, orderData, onS
                             </div>
                             <div className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-full border border-blue-100 shadow-sm">
                                 <Sparkles className="w-3.5 h-3.5 text-[#0077B6]" />
-                                <span className="text-[10px] font-black text-[#0077B6]">BASE MAINNET</span>
+                                <span className="text-[10px] font-black text-[#0077B6]">BASE</span>
                             </div>
                         </div>
 

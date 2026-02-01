@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, BrainCircuit, AlertCircle, RefreshCcw } from 'lucide-react';
+import { Sparkles, AlertCircle, RefreshCcw } from 'lucide-react';
 
 interface CoreInsightPanelProps {
   casts: any[];
@@ -72,12 +72,10 @@ export default function CoreInsightPanel({ casts, creatorName }: CoreInsightPane
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
-           <div className="bg-linear-to-br from-[#3674B5] to-[#A1E3F9] p-2 rounded-lg text-white">
-              <BrainCircuit size={20} />
-           </div>
+           <img src="/icon-title.png" alt="Nova Analyst" className="w-10 h-10 rounded-lg object-contain" />
            <div>
-               <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">AI Analyst</h3>
-               <p className="text-[10px] text-gray-400 font-medium">Powered by Gemini</p>
+               <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Nova Analyst</h3>
+               <p className="text-[10px] text-gray-400 font-medium">Ready to analyze Creator post</p>
            </div>
         </div>
         
